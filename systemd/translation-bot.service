@@ -1,0 +1,14 @@
+[Unit]
+Description = Translation Bot
+
+[Service]
+User = kambara
+Environment = TRANSLATE_KEY=XXXXX
+Environment = SLACK_API_TOKEN=XXXXX
+WorkingDirectory = /home/kambara/translation-bot
+ExecStart = /usr/local/bin/bundle exec /home/kambara/translation-bot/bot.rb
+SyslogIdentifier=translation-bot
+Restart = always
+
+[Install]
+WantedBy = multi-user.target

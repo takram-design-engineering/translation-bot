@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 require 'slack-ruby-bot'
 require 'google/cloud/translate'
 require 'pp'
@@ -6,16 +8,9 @@ class TranslationBot < SlackRubyBot::Bot
   @translate = Google::Cloud::Translate.new
   
   def self.translate(text)
-    puts '---'
-    puts text
     text = replace(text)
-    puts text
     translated_text = @translate.translate(text, to: 'en', model: 'nmt').text.to_s
-    puts ''
-    puts translated_text
     translated_text = restore(translated_text)
-    puts translated_text
-    puts '---'
     translated_text
   end
   
