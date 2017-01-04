@@ -2,6 +2,7 @@
 
 require 'slack-ruby-bot'
 require 'google/cloud/translate'
+require 'cgi'
 require 'pp'
 
 class TranslationBot < SlackRubyBot::Bot
@@ -11,6 +12,7 @@ class TranslationBot < SlackRubyBot::Bot
     text = replace(text)
     translated_text = @translate.translate(text, to: 'en', model: 'nmt').text.to_s
     translated_text = restore(translated_text)
+    translated_text = CGI.unescapeHTML(translated_text)
     translated_text
   end
   
@@ -55,11 +57,8 @@ class TranslationBot < SlackRubyBot::Bot
         reply_text += "\n#{translate(comment)}"
       end
       reply(client, data, username, reply_text)
-      #client.say(text: reply_text, channel: data.channel)
     else
       reply(client, data, username, translate(text))
-      #client.say(text: "*#{username}:* #{translate(text)}",
-      #           channel: data.channel)
     end
   end
 end
