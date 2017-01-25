@@ -5,35 +5,88 @@ require 'google/cloud/translate'
 require 'cgi'
 require 'pp'
 
-class TranslationBot < SlackRubyBot::Bot
-  @translate = Google::Cloud::Translate.new
-  
+class Translator
   def self.translate(text)
+    Translator.new(text).translate
+  end
+
+  def initialize(text)
+    @original_text = text
+  end
+
+  def translate
+    puts '-----'
+    puts '0', @original_text
+    text = CGI.unescapeHTML(@original_text)
+    puts '1', text
     text = replace(text)
-    translated_text = @translate.translate(text, to: 'en', model: 'nmt').text.to_s
+    puts '2', text
+    translated_text = Translator.google_translate.translate(text, to: 'en', model: 'nmt').text.to_s
+    puts '3', translated_text
     translated_text = restore(translated_text)
-    translated_text = CGI.unescapeHTML(translated_text)
-    translated_text
-  end
-  
-  def self.replace(text)
-    ## Replace emoji
-    text.gsub! /:([\+\w]+):/, '[[[\1]]]'
-    ## Replace mentioned name
-    text.gsub! /<@([\-\w]+)>/, '{{{\1}}}'
-    text.gsub! /<\!([\-\w]+)>/, '(((\1)))'
-    text
-  end
-  
-  def self.restore(translated_text)
-    ## Restore emoji
-    translated_text.gsub! /\[\[\[([\+\w]+)\]\]\]/, ':\1:'
-    ## Restore mentioned name
-    translated_text.gsub! /\{\{\{([\-\w]+)\}\}\}/, '<@\1>'
-    translated_text.gsub!(/\(\(\(([\-\w]+)\)\)\)/) {|matched| "<!#{$1.downcase}>"}
+    puts '4', translated_text
+    puts '-----'
     translated_text
   end
 
+  def self.google_translate
+    @@translate_ ||= Google::Cloud::Translate.new
+  end
+
+  private
+
+  def replace(text)
+    ## Replace emoji
+    @emojis = []
+    text.gsub!(/:([\+\-\w]+):/) {
+      index = @emojis.length
+      @emojis << $1
+      "<e#{index}>"
+    }
+    ## Replace mentioned name
+    @mentions = []
+    text.gsub!(/<@([\-\w]+)>/) {
+      index = @mentions.length
+      @mentions << $1
+      "<m#{index}>"
+    }
+    ## Annoucement like <!channel>
+    @announcements = []
+    text.gsub!(/<\!([\-\w]+)>/) {
+      index = @announcements.length
+      @announcements << $1
+      "<a#{index}>"
+    }
+    text
+  end
+
+  def restore(text)
+    ## Restore emoji
+    text.gsub!(/<e(\d+)>/i) {|word|
+      name = @emojis[$1.to_i]
+      if name
+        ":#{name}:"
+      else
+        word
+      end
+    }
+    ## Restore mentioned name
+    text.gsub!(/<m(\d+)>/i) {
+      index = $1.to_i
+      name = @mentions[index]
+      "<@#{name}>"
+    }
+    ## Restore annoucement
+    text.gsub!(/<a(\d+)>/i) {
+      index = $1.to_i
+      name = @announcements[index]
+      "<!#{name}>"
+    }
+    text
+  end
+end
+
+class TranslationBot < SlackRubyBot::Bot
   def self.reply(client, data, username, text)
     client.web_client.chat_postMessage(
       channel: data.channel,
@@ -50,15 +103,17 @@ class TranslationBot < SlackRubyBot::Bot
     text = data.text
     username = Slack::Web::Client.new.users_info(user: data.user)[:user][:name]
     if data['subtype'] && data['subtype'] == 'file_share'
+      ## File
       title = data[:file][:title]
-      reply_text = "uploaded: #{translate(title)}"
+      reply_text = "uploaded: #{Translator.translate(title)}"
       if data[:file][:initial_comment]
         comment = data[:file][:initial_comment][:comment]
-        reply_text += "\n#{translate(comment)}"
+        reply_text += "\n#{Translator.translate(comment)}"
       end
       reply(client, data, username, reply_text)
     else
-      reply(client, data, username, translate(text))
+      ## Text
+      reply(client, data, username, Translator.translate(text))
     end
   end
 end
