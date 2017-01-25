@@ -25,6 +25,9 @@ class Translator
     puts '3', translated_text
     translated_text = restore(translated_text)
     puts '4', translated_text
+    translated_text.gsub!(/><@/, '> <@')
+    translated_text.gsub!(/><!/, '> <!')
+    puts '5', translated_text
     puts '-----'
     translated_text
   end
@@ -64,23 +67,17 @@ class Translator
     ## Restore emoji
     text.gsub!(/<e(\d+)>/i) {|word|
       name = @emojis[$1.to_i]
-      if name
-        ":#{name}:"
-      else
-        word
-      end
+      name ? ":#{name}:" : word
     }
     ## Restore mentioned name
-    text.gsub!(/<m(\d+)>/i) {
-      index = $1.to_i
-      name = @mentions[index]
-      "<@#{name}>"
+    text.gsub!(/<m(\d+)>/i) {|word|
+      name = @mentions[$1.to_i]
+      name ? "<@#{name}>" : word
     }
     ## Restore annoucement
-    text.gsub!(/<a(\d+)>/i) {
-      index = $1.to_i
-      name = @announcements[index]
-      "<!#{name}>"
+    text.gsub!(/<a(\d+)>/i) {|word|
+      name = @announcements[$1.to_i]
+      name ? "<!#{name}>" : word
     }
     text
   end
