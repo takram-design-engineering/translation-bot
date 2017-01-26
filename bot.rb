@@ -60,6 +60,12 @@ class Translator
       @announcements << $1
       "<a#{index}>"
     }
+    ## Special characters like up-arrow
+    @special_chars = []
+    text.gsub!(/(↑|↓|←|→)/) {
+      @special_chars << $1
+      "<s#{@special_chars.length - 1}>"
+    }
     text
   end
 
@@ -78,6 +84,11 @@ class Translator
     text.gsub!(/<a(\d+)>/i) {|word|
       name = @announcements[$1.to_i]
       name ? "<!#{name}>" : word
+    }
+    ## Special chararacters
+    text.gsub!(/<s(\d+)>/i) {|word|
+      name = @special_chars[$1.to_i]
+      name || word
     }
     text
   end
