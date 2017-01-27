@@ -19,7 +19,7 @@ This bot is tested on Ubuntu 16.04.
     sudo gem install bundler
     bundle install
 
-### Setup systemd (optional)
+### Run the bot as a systemd service (optional)
 
     sudo cp ~/translation-bot/systemd/translation-bot.service /etc/systemd/system/
     sudo systemctl enable translation-bot.service
@@ -30,11 +30,11 @@ Reload systemd after editing `/etc/systemd/system/translation-bot.service`.
 
 ## Start the server
 
-Development:
+For development:
 
     TRANSLATE_KEY=xxxxx SLACK_API_TOKEN=xxxxx bundle exec ruby bot.rb
 
-Systemd:
+For systemd:
 
     sudo systemctl start translation-bot.service
 
