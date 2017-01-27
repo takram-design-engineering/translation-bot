@@ -26,11 +26,9 @@ class Translator
   end
 
   def translate_line(text)
-    puts '-----'
     puts text
     text = replace(text)
     puts text
-    puts '--'
     translated_text = Translator.google_translate.translate(text, to: 'en', model: 'nmt').text.to_s
     puts translated_text
     translated_text = restore(translated_text)
@@ -121,18 +119,17 @@ class TranslationBot < SlackRubyBot::Bot
     reply_text = "uploaded: #{Translator.translate(title)}"
     if data[:file][:initial_comment]
       comment = data[:file][:initial_comment][:comment]
-      reply_text += "\n\“ #{Translator.translate(comment)} \„"
+      reply_text += "\n\n\“ #{Translator.translate(comment)} \„"
     end
     reply_text
   end
 
   match /\p{Hiragana}|\p{Katakana}|[一-龠々]/ do |client, data, match|
-    text = data.text
     username = Slack::Web::Client.new.users_info(user: data.user)[:user][:name]
     if data['subtype'] && data['subtype'] == 'file_share'
       reply(client, data, username, translate_uploaded_message(data))
     else
-      reply(client, data, username, Translator.translate(text))
+      reply(client, data, username, Translator.translate(data.text))
     end
   end
 end
