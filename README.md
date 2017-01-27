@@ -1,12 +1,14 @@
 # Translation Bot
 
-Slack bot translating Japanese into English
+A Slack bot to translate Japanese messages into English by using Google Cloud Translation API
 
 ## Requirements
 
-- [Google Cloud Translation API](https://cloud.google.com/translate/)
-  - Enable the API and get your TRANSLATE_KEY
+- Enable [Google Cloud Translation API](https://cloud.google.com/translate/) and get TRANSLATE_KEY
+- [Add a Slack bot](https://slack.com/apps/build/custom-integration)
 - Ruby (>= 2.0)
+
+This bot is tested on Ubuntu 16.04.
 
 ## Install
 
@@ -15,7 +17,7 @@ Slack bot translating Japanese into English
     sudo gem install bundler
     bundle install
 
-### Systemd
+### Setup systemd (optional)
 
     sudo cp ~/translation-bot/systemd/translation-bot.service /etc/systemd/system/
     sudo systemctl enable translation-bot.service
@@ -24,7 +26,7 @@ Reload systemd after editing `/etc/systemd/system/translation-bot.service`.
 
     sudo systemctl daemon-reload
 
-## Run
+## Start the server
 
 Development:
 
@@ -34,3 +36,6 @@ Systemd:
 
     sudo systemctl start translation-bot.service
 
+## License
+
+MIT License
