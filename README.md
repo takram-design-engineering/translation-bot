@@ -40,5 +40,5 @@ For systemd:
 
 ## License
 
-The MIT License
+The MIT License  
 Copyright (c) 2017 Takram
