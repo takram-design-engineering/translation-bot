@@ -15,10 +15,22 @@ class Translator
   end
 
   def translate
+    lines = @original_text.split("\n")
+    lines.map {|line|
+      if line.match(/\p{Hiragana}|\p{Katakana}|[一-龠々]/)
+        translate_line(line)
+      else
+        line
+      end
+    }.join("\n")
+  end
+
+  def translate_line(text)
     puts '-----'
-    puts @original_text
-    text = replace(@original_text)
     puts text
+    text = replace(text)
+    puts text
+    puts '--'
     translated_text = Translator.google_translate.translate(text, to: 'en', model: 'nmt').text.to_s
     puts translated_text
     translated_text = restore(translated_text)
@@ -26,7 +38,6 @@ class Translator
     translated_text.gsub!(/><!/, '> <!')
     translated_text = CGI.unescapeHTML(translated_text)
     puts translated_text
-    puts '-----'
     translated_text
   end
 
