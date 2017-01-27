@@ -29,7 +29,7 @@ class Translator
     puts text
     text = replace(text)
     puts text
-    translated_text = Translator.google_translate.translate(text, to: 'en', model: 'nmt').text.to_s
+    translated_text = Translator.google_translate.translate(text, from: 'ja', to: 'en', model: 'nmt').text.to_s
     puts translated_text
     translated_text = restore(translated_text)
     translated_text.gsub!(/><@/, '> <@')
@@ -49,30 +49,24 @@ class Translator
     ## Replace emoji
     @emojis = []
     text.gsub!(/:([\+\-\w]+):/) {
-      index = @emojis.length
       @emojis << $1
-      "<e#{index}>"
+      "<e#{@emojis.length - 1}>"
     }
+
     ## Replace mentioned name
     @mentions = []
     text.gsub!(/<@([\-\w]+)>/) {
-      index = @mentions.length
       @mentions << $1
-      "<m#{index}>"
+      "<m#{@mentions.length - 1}>"
     }
+
     ## Annoucement like <!channel>
     @announcements = []
     text.gsub!(/<\!([\-\w]+)>/) {
-      index = @announcements.length
       @announcements << $1
-      "<a#{index}>"
+      "<a#{@announcements.length - 1}>"
     }
-    ## Special characters like up-arrow
-    @special_chars = []
-    text.gsub!(/([↑↓←→⇒⇔©®]+)/) {
-      @special_chars << $1
-      "<s#{@special_chars.length - 1}>"
-    }
+
     text
   end
 
@@ -82,21 +76,19 @@ class Translator
       name = @emojis[$1.to_i]
       name ? ":#{name}:" : word
     }
+
     ## Restore mentioned name
     text.gsub!(/<m(\d+)>/i) {|word|
       name = @mentions[$1.to_i]
       name ? "<@#{name}>" : word
     }
+
     ## Restore annoucement
     text.gsub!(/<a(\d+)>/i) {|word|
       name = @announcements[$1.to_i]
       name ? "<!#{name}>" : word
     }
-    ## Special chararacters
-    text.gsub!(/<s(\d+)>/i) {|word|
-      name = @special_chars[$1.to_i]
-      name || word
-    }
+
     text
   end
 end
@@ -111,7 +103,8 @@ class TranslationBot < SlackRubyBot::Bot
           author_name: username,
           text: text
         }
-      ])
+      ]
+    )
   end
 
   def self.translate_uploaded_message(data)
