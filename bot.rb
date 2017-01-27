@@ -16,18 +16,16 @@ class Translator
 
   def translate
     puts '-----'
-    puts '0', @original_text
-    text = CGI.unescapeHTML(@original_text)
-    puts '1', text
-    text = replace(text)
-    puts '2', text
+    puts @original_text
+    text = replace(@original_text)
+    puts text
     translated_text = Translator.google_translate.translate(text, to: 'en', model: 'nmt').text.to_s
-    puts '3', translated_text
+    puts translated_text
     translated_text = restore(translated_text)
-    puts '4', translated_text
     translated_text.gsub!(/><@/, '> <@')
     translated_text.gsub!(/><!/, '> <!')
-    puts '5', translated_text
+    translated_text = CGI.unescapeHTML(translated_text)
+    puts translated_text
     puts '-----'
     translated_text
   end
@@ -62,7 +60,7 @@ class Translator
     }
     ## Special characters like up-arrow
     @special_chars = []
-    text.gsub!(/(↑|↓|←|→)/) {
+    text.gsub!(/([↑↓←→⇒⇔©®]+)/) {
       @special_chars << $1
       "<s#{@special_chars.length - 1}>"
     }
@@ -107,20 +105,22 @@ class TranslationBot < SlackRubyBot::Bot
       ])
   end
 
+  def self.translate_uploaded_message(data)
+    title = data[:file][:title]
+    reply_text = "uploaded: #{Translator.translate(title)}"
+    if data[:file][:initial_comment]
+      comment = data[:file][:initial_comment][:comment]
+      reply_text += "\n\“ #{Translator.translate(comment)} \„"
+    end
+    reply_text
+  end
+
   match /\p{Hiragana}|\p{Katakana}|[一-龠々]/ do |client, data, match|
     text = data.text
     username = Slack::Web::Client.new.users_info(user: data.user)[:user][:name]
     if data['subtype'] && data['subtype'] == 'file_share'
-      ## File
-      title = data[:file][:title]
-      reply_text = "uploaded: #{Translator.translate(title)}"
-      if data[:file][:initial_comment]
-        comment = data[:file][:initial_comment][:comment]
-        reply_text += "\n#{Translator.translate(comment)}"
-      end
-      reply(client, data, username, reply_text)
+      reply(client, data, username, translate_uploaded_message(data))
     else
-      ## Text
       reply(client, data, username, Translator.translate(text))
     end
   end
