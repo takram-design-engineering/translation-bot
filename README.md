@@ -19,7 +19,7 @@ This bot is tested on Ubuntu 16.04.
     sudo gem install bundler
     bundle install
 
-### Run the bot as a systemd service (optional)
+### Register as a systemd service (optional)
 
     sudo cp ~/translation-bot/systemd/translation-bot.service /etc/systemd/system/
     sudo systemctl enable translation-bot.service
@@ -28,7 +28,7 @@ Reload systemd after editing `/etc/systemd/system/translation-bot.service`.
 
     sudo systemctl daemon-reload
 
-## Start the server
+## Run the server
 
 For development:
 
@@ -40,4 +40,5 @@ For systemd:
 
 ## License
 
-The MIT License (MIT)
+The MIT License
+Copyright (c) 2017 Takram
