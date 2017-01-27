@@ -2,6 +2,8 @@
 
 A Slack bot to translate Japanese messages into English by using Google Cloud Translation API
 
+![Screenshot](https://i.gyazo.com/6af2609ced8b1788deb75ef4f5d5c088.png)
+
 ## Requirements
 
 - Enable [Google Cloud Translation API](https://cloud.google.com/translate/) and get TRANSLATE_KEY
@@ -38,4 +40,4 @@ Systemd:
 
 ## License
 
-MIT License
+The MIT License (MIT)
