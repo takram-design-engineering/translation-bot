@@ -34,6 +34,7 @@ class Translator
     translated_text = restore(translated_text)
     translated_text.gsub!(/><@/, '> <@')
     translated_text.gsub!(/><!/, '> <!')
+    translated_text.gsub!(/><#/, '> <#')
     translated_text = CGI.unescapeHTML(translated_text)
     puts translated_text
     translated_text
