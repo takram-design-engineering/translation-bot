@@ -34,6 +34,7 @@ class Translator
     translated_text = restore(translated_text)
     translated_text.gsub!(/><@/, '> <@')
     translated_text.gsub!(/><!/, '> <!')
+    translated_text.gsub!(/><#/, '> <#')
     translated_text = CGI.unescapeHTML(translated_text)
     puts translated_text
     translated_text
@@ -50,23 +51,29 @@ class Translator
     @emojis = []
     text.gsub!(/:([\+\-\w]+):/) {
       @emojis << $1
-      "<e#{@emojis.length - 1}>"
+      "<e#{ @emojis.length - 1 }>"
     }
 
     ## Replace mentioned name
     @mentions = []
-    text.gsub!(/<@([\-\w]+)>/) {
+    text.gsub!(/<@([\w\d\-\.\_\|]+)>/) {
       @mentions << $1
-      "<m#{@mentions.length - 1}>"
+      "<m#{ @mentions.length - 1 }>"
     }
 
     ## Annoucement like <!channel>
     @announcements = []
     text.gsub!(/<\!([\-\w]+)>/) {
       @announcements << $1
-      "<a#{@announcements.length - 1}>"
+      "<a#{ @announcements.length - 1 }>"
     }
 
+    ## Channel name
+    @channels = []
+    text.gsub!(/<#([\w\d\-\|]+)>/) {
+      @channels << $1
+      "<c#{ @channels.length - 1 }>"
+    }
     text
   end
 
@@ -89,6 +96,11 @@ class Translator
       name ? "<!#{name}>" : word
     }
 
+    ## Restore channel
+    text.gsub!(/<c(\d+)>/i) {|word|
+      name = @channels[$1.to_i]
+      name ? "<\##{name}>" : word
+    }
     text
   end
 end
