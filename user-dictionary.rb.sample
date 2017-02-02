@@ -1,0 +1,6 @@
+module UserDictionary
+  def add_entries
+    entry /ナリラボ/, 'Nari-lab'
+    entry /ツボーズ/, 'Tsubows'
+  end
+end

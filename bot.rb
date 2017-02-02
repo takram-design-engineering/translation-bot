@@ -5,6 +5,33 @@ require 'google/cloud/translate'
 require 'cgi'
 require 'pp'
 
+class Dictionary
+  begin
+    require_relative 'user-dictionary'
+    include UserDictionary
+  rescue LoadError
+    puts 'No user dictionary exist'
+  end
+
+  def initialize
+    @entries = []
+    if self.respond_to?(:add_entries)
+      add_entries()
+    end
+  end
+
+  def convert(text)
+    @entries.each do |e|
+      text.gsub!(e[0], e[1])
+    end
+    text
+  end
+
+  def entry(pattern, replacement)
+    @entries << [pattern, replacement]
+  end
+end
+
 class Translator
   def self.translate(text)
     Translator.new(text).translate
@@ -12,8 +39,9 @@ class Translator
 
   def initialize(text)
     @original_text = text
+    @dictionary = Dictionary.new
   end
-
+  
   def translate
     lines = @original_text.split("\n")
     lines.map {|line|
@@ -26,8 +54,11 @@ class Translator
   end
 
   def translate_line(text)
+    puts '---'
     puts text
     text = replace(text)
+    puts text
+    text = @dictionary.convert(text)
     puts text
     translated_text = Translator.google_translate.translate(text, from: 'ja', to: 'en', model: 'nmt').text.to_s
     puts translated_text
