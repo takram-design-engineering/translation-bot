@@ -5,6 +5,11 @@ require 'google/cloud/translate'
 require 'cgi'
 require 'pp'
 
+module LanguageType
+  English = 1,
+  Japanese = 2
+end
+
 class Translator
   def self.translate(text)
     Translator.new(text).translate
@@ -17,19 +22,23 @@ class Translator
   def translate
     lines = @original_text.split("\n")
     lines.map {|line|
-      if line.match(/\p{Hiragana}|\p{Katakana}|[一-龠々]/)
-        translate_line(line)
+      language_type = get_language_type line
+      if language_type
+        translate_line(line, language_type)
       else
         line
       end
     }.join("\n")
   end
 
-  def translate_line(text)
+  def translate_line(text, language_type)
     puts text
     text = replace(text)
     puts text
-    translated_text = Translator.google_translate.translate(text, from: 'ja', to: 'en', model: 'nmt').text.to_s
+
+    translate_type = language_type === LanguageType::Japanese ? { "from" => "ja", "to" => "en" } : { "from" => "en", "to" => "ja" }
+    translated_text = Translator.google_translate.translate(text, from: translate_type["from"], to: translate_type["to"], model: 'nmt').text.to_s
+
     puts translated_text
     translated_text = restore(translated_text)
     translated_text.gsub!(/><@/, '> <@')
@@ -42,6 +51,19 @@ class Translator
 
   def self.google_translate
     @@translate_ ||= Google::Cloud::Translate.new
+  end
+
+  def get_language_type(text)
+    language_type = nil
+    is_japanese = text.match(/\p{Hiragana}|\p{Katakana}|[一-龠々]/)
+    is_english = text.match(/[a-zA-Z]+/)
+
+    if is_japanese
+      language_type = LanguageType::Japanese
+    elsif is_english
+      language_type = LanguageType::English
+    end
+    language_type
   end
 
   private
@@ -106,6 +128,16 @@ class Translator
 end
 
 class TranslationBot < SlackRubyBot::Bot
+
+  def self.receive_message(client, data, match)
+    username = Slack::Web::Client.new.users_info(user: data.user)[:user][:name]
+    if data['subtype'] && data['subtype'] == 'file_share'
+      reply(client, data, username, translate_uploaded_message(data))
+    else
+      reply(client, data, username, Translator.translate(data.text))
+    end
+  end
+
   def self.reply(client, data, username, text)
     client.web_client.chat_postMessage(
       channel: data.channel,
@@ -130,13 +162,13 @@ class TranslationBot < SlackRubyBot::Bot
   end
 
   match /\p{Hiragana}|\p{Katakana}|[一-龠々]/ do |client, data, match|
-    username = Slack::Web::Client.new.users_info(user: data.user)[:user][:name]
-    if data['subtype'] && data['subtype'] == 'file_share'
-      reply(client, data, username, translate_uploaded_message(data))
-    else
-      reply(client, data, username, Translator.translate(data.text))
-    end
+    receive_message(client, data, match)
   end
+
+  match /[a-zA-Z]+/ do |client, data, match|
+    receive_message(client, data, match)
+  end
+
 end
 
 TranslationBot.run
