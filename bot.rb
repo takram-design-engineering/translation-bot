@@ -11,18 +11,17 @@ module LanguageType
 end
 
 class Translator
-  def self.translate(text)
-    Translator.new(text).translate
+  def self.translate(text, language_type)
+    Translator.new(text).translate(language_type)
   end
 
   def initialize(text)
     @original_text = text
   end
 
-  def translate
+  def translate(language_type)
     lines = @original_text.split("\n")
     lines.map {|line|
-      language_type = get_language_type line
       if language_type
         translate_line(line, language_type)
       else
@@ -51,19 +50,6 @@ class Translator
 
   def self.google_translate
     @@translate_ ||= Google::Cloud::Translate.new
-  end
-
-  def get_language_type(text)
-    language_type = nil
-    is_japanese = text.match(/\p{Hiragana}|\p{Katakana}|[一-龠々]/)
-    is_english = text.match(/[a-zA-Z]+/)
-
-    if is_japanese
-      language_type = LanguageType::Japanese
-    elsif is_english
-      language_type = LanguageType::English
-    end
-    language_type
   end
 
   private
@@ -129,12 +115,12 @@ end
 
 class TranslationBot < SlackRubyBot::Bot
 
-  def self.receive_message(client, data, match)
+  def self.receive_message(client, data, match, language_type)
     username = Slack::Web::Client.new.users_info(user: data.user)[:user][:name]
     if data['subtype'] && data['subtype'] == 'file_share'
-      reply(client, data, username, translate_uploaded_message(data))
+      reply(client, data, username, translate_uploaded_message(data, language_type))
     else
-      reply(client, data, username, Translator.translate(data.text))
+      reply(client, data, username, Translator.translate(data.text, language_type))
     end
   end
 
@@ -151,22 +137,22 @@ class TranslationBot < SlackRubyBot::Bot
     )
   end
 
-  def self.translate_uploaded_message(data)
+  def self.translate_uploaded_message(data, language_type)
     title = data[:file][:title]
-    reply_text = "uploaded: #{Translator.translate(title)}"
+    reply_text = "uploaded: #{Translator.translate(title, language_type)}"
     if data[:file][:initial_comment]
       comment = data[:file][:initial_comment][:comment]
-      reply_text += "\n\n\“ #{Translator.translate(comment)} \„"
+      reply_text += "\n\n\“ #{Translator.translate(comment, language_type)} \„"
     end
     reply_text
   end
 
   match /\p{Hiragana}|\p{Katakana}|[一-龠々]/ do |client, data, match|
-    receive_message(client, data, match)
+    receive_message(client, data, match, LanguageType::Japanese)
   end
 
   match /[a-zA-Z]+/ do |client, data, match|
-    receive_message(client, data, match)
+    receive_message(client, data, match, LanguageType::English)
   end
 
 end
